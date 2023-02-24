@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 const val TAG = "PLACES_VIEW_MODEL"
 class PlacesViewModel : ViewModel() {
 
-    private val places = mutableListOf<Place>(Place("Aukland, NZ"), Place("New Delhi, IN"))
+    private val places = mutableListOf<Place>(Place("Aukland, NZ", "Visit Island"), Place("New Delhi, IN", "Visit Taj Mahal"))
 
     fun getPlaces(): List<Place> { // this returns a immutable list and maintains control of the list
         return places // smart cast

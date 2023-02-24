@@ -48,6 +48,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/new_place_name" />
 
+    <EditText
+        android:id="@+id/reason_to_visit"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/medium_spacing"
+        android:background="@android:color/white"
+        android:hint="@string/reason_to_visit"
+        android:minHeight="48dp"
+        android:padding="@dimen/small_spacing"
+        app:layout_constraintBottom_toTopOf="@id/place_list"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/new_place_name" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/place_list"
         android:layout_width="match_parent"
@@ -56,6 +70,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/new_place_name" />
+        app:layout_constraintTop_toBottomOf="@+id/reason_to_visit" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

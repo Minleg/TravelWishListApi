@@ -6,4 +6,6 @@
     <string name="created_on">Created on %1$s</string>
     <string name="place_deleted">%1$s deleted</string>
     <string name="undo">UNDO</string>
+    <string name="reason_to_visit">Reason to visit ?</string>
+    <string name="reason_visit">Reason to Visit</string>
 </resources>
