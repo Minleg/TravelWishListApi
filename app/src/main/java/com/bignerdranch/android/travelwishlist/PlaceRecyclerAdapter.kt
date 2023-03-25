@@ -3,12 +3,14 @@ package com.bignerdranch.android.travelwishlist
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 interface OnListItemClickedListener {
-    fun onListItemClicked(place: Place)
+    fun onMapRequestButtonClicked(place: Place)
+    fun onStarredStatusChanged(place: Place, isStarred: Boolean)
 }
 
 class PlaceRecyclerAdapter(
@@ -28,13 +30,22 @@ class PlaceRecyclerAdapter(
             val reasonTextView: TextView = view.findViewById(R.id.visit_reason)
             reasonTextView.text = place.reason
 
-            val dateCreatedOnTextView: TextView = view.findViewById(R.id.date_place_added)
-            val createdOnText = view.context.getString(R.string.created_on, place.formattedDate())
-            dateCreatedOnTextView.text = createdOnText
+//            val dateCreatedOnTextView: TextView = view.findViewById(R.id.date_place_added)
+//            val createdOnText = view.context.getString(R.string.created_on, place.formattedDate())
+//            dateCreatedOnTextView.text = createdOnText
 
             val mapIcon: ImageView = view.findViewById(R.id.map_icon)
             mapIcon.setOnClickListener {
-                onListItemClickedListener.onListItemClicked(place)
+                onListItemClickedListener.onMapRequestButtonClicked(place)
+            }
+
+            val starCheck = view.findViewById<CheckBox>(R.id.star_check)
+            // in order stop the event listener to run when we first set the starred value
+            starCheck.setOnClickListener(null) // removes the listener
+            starCheck.isChecked = place.starred // update
+            starCheck.setOnClickListener {
+                // replace listener - avoid endless loop
+                onListItemClickedListener.onStarredStatusChanged(place, starCheck.isChecked)
             }
         }
     }
