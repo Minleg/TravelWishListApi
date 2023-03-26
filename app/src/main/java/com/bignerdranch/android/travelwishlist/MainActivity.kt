@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +25,7 @@ class MainActivity : AppCompatActivity(), OnListItemClickedListener, OnDataChang
     private lateinit var addNewPlaceButton: Button
     private lateinit var reasonToVisitEditText: EditText
     private lateinit var placeListRecyclerView: RecyclerView
+    private lateinit var wishListContainer: View
 
     private lateinit var placesRecyclerAdapter: PlaceRecyclerAdapter
 
@@ -38,10 +41,11 @@ class MainActivity : AppCompatActivity(), OnListItemClickedListener, OnDataChang
         addNewPlaceButton = findViewById(R.id.add_new_place_button)
         reasonToVisitEditText = findViewById(R.id.reason_to_visit)
         newPlaceEditText = findViewById(R.id.new_place_name)
+        wishListContainer = findViewById(R.id.wishlist_container)
 
         val places = placesViewModel.getPlaces() // list of place objects
 
-        placesRecyclerAdapter = PlaceRecyclerAdapter(places, this)
+        placesRecyclerAdapter = PlaceRecyclerAdapter(listOf(), this)
         placeListRecyclerView.layoutManager = LinearLayoutManager(this)
         placeListRecyclerView.adapter = placesRecyclerAdapter
 
@@ -51,23 +55,35 @@ class MainActivity : AppCompatActivity(), OnListItemClickedListener, OnDataChang
         addNewPlaceButton.setOnClickListener {
             addNewPlace()
         }
+
+        placesViewModel.allPlaces.observe(this) { places ->
+            placesRecyclerAdapter.places = places
+            placesRecyclerAdapter.notifyDataSetChanged()
+        }
+
+        placesViewModel.userMessage.observe(this) { message ->
+            if (message != null) {
+                Snackbar.make(wishListContainer, message, Snackbar.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun addNewPlace() {
         val name = newPlaceEditText.text.toString().trim()
-        val reason = reasonToVisitEditText.text.toString().trim() // gets the user input for reason to visit the place
+        val reason = reasonToVisitEditText.text.toString()
+            .trim() // gets the user input for reason to visit the place
         if (name.isEmpty() or reason.isEmpty()) {
             Toast.makeText(this, "Enter a place name", Toast.LENGTH_SHORT).show()
         } else {
             val newPlace = Place(name, reason)
             val positionAdded = placesViewModel.addNewPlace(newPlace)
-            if (positionAdded == -1) {
-                Toast.makeText(this, "You already added that place", Toast.LENGTH_SHORT).show()
-            } else {
-                placesRecyclerAdapter.notifyItemInserted(positionAdded)
-                clearForm()
-                hideKeyboard()
-            }
+//            if (positionAdded == -1) {
+//            Toast.makeText(this, "You already added that place", Toast.LENGTH_SHORT).show()
+//            } else {
+//                placesRecyclerAdapter.notifyItemInserted(positionAdded)
+            clearForm()
+            hideKeyboard()
+//            }
         }
     }
 
@@ -102,8 +118,9 @@ class MainActivity : AppCompatActivity(), OnListItemClickedListener, OnDataChang
 //    }
 
     override fun onListItemDeleted(position: Int) {
-        val deletedPlace = placesViewModel.deletePlace(position)
-        placesRecyclerAdapter.notifyItemRemoved(position)
+        val place = placesRecyclerAdapter.places[position]
+        placesViewModel.deletePlace(place)
+//          placesRecyclerAdapter.notifyItemRemoved(position)
 
 //        Snackbar.make(
 //            findViewById(R.id.wishlist_container),
