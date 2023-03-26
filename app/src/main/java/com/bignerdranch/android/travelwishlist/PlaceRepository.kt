@@ -2,6 +2,7 @@ package com.bignerdranch.android.travelwishlist
 
 import android.util.Log
 import okhttp3.OkHttpClient
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -23,18 +24,21 @@ class PlaceRepository {
 
     private val placeService = retrofit.create(PlaceService::class.java)
 
-    suspend fun getAllPlaces(): ApiResult<List<Place>> {
+    suspend fun <T : Any> apiCall(
+        apiCallFunction: suspend () -> Response<T>,
+        successMessage: String?,
+        failMessage: String?,
+    ): ApiResult<T> {
         try {
-            val response = placeService.getAllPlaces()
-
+//            val response = placeService.getAllPlaces() // replace with a call to the function definition that's provided as an argument
+            val response = apiCallFunction.invoke()
             if (response.isSuccessful) { // connected, got data back
-                val places = response.body() ?: listOf()
-                Log.d(TAG, "List of places {$places}")
+                Log.d(TAG, "List of places ${response.body()}")
                 // Log.d(TAG, "Server created new place ${response.body()}")
-                return ApiResult(ApiStatus.SUCCESS, response.body(), null)
+                return ApiResult(ApiStatus.SUCCESS, response.body(), successMessage)
             } else { // connected to server but server sent an error message
-                Log.e(TAG, "Error fetching places from API server ${response.errorBody()}")
-                return ApiResult(ApiStatus.SERVER_ERROR, null, "Error fetching places")
+                Log.e(TAG, "Server error ${response.errorBody()}")
+                return ApiResult(ApiStatus.SERVER_ERROR, null, failMessage)
             }
             // TODO more error handling!
         } catch (ex: Exception) { // can't connect to server - network error
@@ -43,24 +47,20 @@ class PlaceRepository {
         }
     }
 
+    suspend fun getAllPlaces(): ApiResult<List<Place>> {
+        return apiCall(
+            placeService::getAllPlaces,
+            null,
+            "Error fetching places for server",
+        )
+    }
+
     suspend fun addPlace(place: Place): ApiResult<Place> {
-        try {
-            val response = placeService.addPlace(place)
-            if (response.isSuccessful) {
-                Log.d(TAG, "Created new place $place")
-                return ApiResult(ApiStatus.SUCCESS, null, "Place created!")
-            } else {
-                Log.e(TAG, "Error creating new place ${response.errorBody()}")
-                return ApiResult(
-                    ApiStatus.SERVER_ERROR,
-                    null,
-                    "Error adding place - is name unique ?",
-                )
-            }
-        } catch (ex: Exception) { // can't connect to server - network error
-            Log.e(TAG, "Error connecting to API server", ex)
-            return ApiResult(ApiStatus.NETWORK_ERROR, null, "Can't connect to server")
-        }
+        return apiCall(
+            { placeService.addPlace(place) },
+            "Place created!",
+            "Error adding place - is name unique ?",
+        )
     }
 
     suspend fun updatePlace(place: Place): ApiResult<Place> {
@@ -78,27 +78,15 @@ class PlaceRepository {
                 "Error - trying to update place with no ID",
             )
         } else {
-            try {
-                val response = placeService.updatePlace(place, place.id)
-                if (response.isSuccessful) {
-                    Log.d(TAG, "Updated new place $place")
-                    return ApiResult(ApiStatus.SUCCESS, null, "Place Updated!")
-                } else {
-                    Log.e(TAG, "Error updating new place ${response.errorBody()}")
-                    return ApiResult(
-                        ApiStatus.SERVER_ERROR,
-                        null,
-                        "Error updating place - is name unique?",
-                    )
-                }
-            } catch (ex: Exception) { // can't connect to server - network error
-                Log.e(TAG, "Error connecting to API server", ex)
-                return ApiResult(ApiStatus.NETWORK_ERROR, null, "Can't connect to server")
-            }
+            return apiCall(
+                { placeService.updatePlace(place, place.id) },
+                "Place updated!",
+                "Error updating place",
+            )
         }
     }
 
-    suspend fun deletePlace(place: Place): ApiResult<Nothing> {
+    suspend fun deletePlace(place: Place): ApiResult<String> {
         if (place.id == null) {
             Log.e(TAG, "Error - trying to delete place with no ID")
             return ApiResult(
@@ -107,19 +95,11 @@ class PlaceRepository {
                 "Error - trying to delete place with no ID",
             )
         } else {
-            try {
-                val response = placeService.deletePlace(place.id)
-                if (response.isSuccessful) {
-                    Log.d(TAG, "Deleted new place $place")
-                    return ApiResult(ApiStatus.SUCCESS, null, "Place Deleted!")
-                } else {
-                    Log.e(TAG, "Error updating new place ${response.errorBody()}")
-                    return ApiResult(ApiStatus.SERVER_ERROR, null, "Error deleting place")
-                }
-            } catch (ex: Exception) { // can't connect to server - network error
-                Log.e(TAG, "Error connecting to API server", ex)
-                return ApiResult(ApiStatus.NETWORK_ERROR, null, "Can't connect to server")
-            }
+            return apiCall(
+                { placeService.deletePlace(place.id) },
+                "Place deleted!",
+                "Error deleting place",
+            )
         }
     }
 }
