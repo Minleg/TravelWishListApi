@@ -1,47 +1,61 @@
 package com.bignerdranch.android.travelwishlist
 
-import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 const val TAG = "PLACES_VIEW_MODEL"
+
 class PlacesViewModel : ViewModel() {
 
-    private val places = mutableListOf<Place>(Place("Aukland, NZ"), Place("New Delhi, IN"))
+//    private val places = mutableListOf<Place>(Place("Aukland, NZ", "Visit Island"), Place("New Delhi, IN", "Visit Taj Mahal", starred = true))
 
-    fun getPlaces(): List<Place> { // this returns a immutable list and maintains control of the list
-        return places // smart cast
+    private val placeRepository = PlaceRepository()
+
+    val allPlaces = MutableLiveData<List<Place>>(listOf<Place>())
+    val userMessage = MutableLiveData<String>()
+
+    init {
+        getPlaces()
     }
 
-    fun addNewPlace(place: Place, position: Int? = null): Int {
-        // return location in the list that the new item was added
-
-//        for (placeName in placeNames) {
-//            if (placeName.name.uppercase() == place.name.uppercase()) {
-//                return -1  // stops from adding duplicate data - it stops the function execution
-//            }
-//        }
-        // all function - returns true if all of the things in a list meet a condition
-        // any function -  returns true if any of the things in a list meet a condition
-        if (places.any { placeName -> placeName.name.uppercase() == place.name.uppercase() }) { // we can use it here instead optionally
-            return -1
-        }
-
-        return if (position == null) {
-            places.add(place) //  adds at the end of the list
-            places.lastIndex
-        } else {
-            places.add(position, place)
-            position
+    fun getPlaces() { // this returns a immutable list and maintains control of the list
+        viewModelScope.launch {
+            val apiResult = placeRepository.getAllPlaces()
+            if (apiResult.status == ApiStatus.SUCCESS) {
+                allPlaces.postValue(apiResult.data)
+            } else {
+                userMessage.postValue(apiResult.message)
+            }
         }
     }
 
-    fun movePlace(from: Int, to: Int) {
-        val place = places.removeAt(from)
-        places.add(to, place)
-        Log.d(TAG, places.toString())
+    fun addNewPlace(place: Place) {
+        viewModelScope.launch {
+            val apiResult = placeRepository.addPlace(place)
+            updateUI(apiResult)
+        }
     }
 
-    fun deletePlace(position: Int): Place {
-        return places.removeAt(position)
+    fun updatePlace(place: Place) {
+        viewModelScope.launch {
+            val apiResult = placeRepository.updatePlace(place)
+            updateUI(apiResult)
+        }
+    }
+
+    fun deletePlace(place: Place) {
+        viewModelScope.launch {
+            val apiResult = placeRepository.deletePlace(place)
+            updateUI(apiResult)
+        }
+    }
+
+    private fun updateUI(result: ApiResult<Any>) {
+        if (result.status == ApiStatus.SUCCESS) {
+            getPlaces()
+        }
+        userMessage.postValue(result.message)
     }
 }
